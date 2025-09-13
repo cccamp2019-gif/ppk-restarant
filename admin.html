@@ -1,0 +1,1582 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>관리자 대시보드 - 프놈펜 한식당</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="kakao-notification.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f8f9fa;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header */
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 0;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 2rem;
+            font-weight: bold;
+            color: white;
+            text-decoration: none;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .nav-btn {
+            padding: 0.5rem 1rem;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .home-btn {
+            background: #28a745;
+            color: white;
+        }
+
+        .home-btn:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .refresh-btn {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .refresh-btn:hover {
+            background: #138496;
+            transform: translateY(-2px);
+        }
+
+        .logout-btn {
+            background: #6f42c1;
+            color: white;
+        }
+
+        .logout-btn:hover {
+            background: #5a32a3;
+            transform: translateY(-2px);
+        }
+
+        /* Main Content */
+        main {
+            padding: 2rem 0;
+        }
+
+        .dashboard-header {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .bulk-actions {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .bulk-actions h3 {
+            color: #333;
+            margin-right: 1rem;
+        }
+
+        .bulk-actions .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-select-all {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-select-all:hover {
+            background: #5a6268;
+        }
+
+        .btn-delete-selected {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-delete-selected:hover {
+            background: #c82333;
+        }
+
+        .btn-delete-all {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-delete-all:hover {
+            background: #c82333;
+        }
+
+        .checkbox-column {
+            width: 50px;
+            text-align: center;
+        }
+
+        .reservation-checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .dashboard-title {
+            font-size: 2.5rem;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .dashboard-subtitle {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 1rem;
+        }
+
+        /* Reservations Table */
+        .reservations-section {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .section-header {
+            background: #f8f9fa;
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .section-subtitle {
+            color: #666;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        .reservations-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .reservations-table th,
+        .reservations-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+            white-space: nowrap;
+        }
+
+        .reservations-table td {
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .reservations-table td:nth-child(10) {
+            max-width: 200px;
+            white-space: normal;
+            word-wrap: break-word;
+        }
+
+        .reservations-table td:nth-child(11) {
+            min-width: 200px;
+            max-width: 250px;
+        }
+
+        .reservations-table small {
+            color: #666;
+            font-size: 0.8rem;
+        }
+
+        .reservations-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+            position: sticky;
+            top: 0;
+        }
+
+        .reservations-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-confirmed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-cancelled {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-restored {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .table-type {
+            padding: 0.25rem 0.5rem;
+            background: #e9ecef;
+            border-radius: 5px;
+            font-size: 0.875rem;
+        }
+
+        /* Loading and Empty States */
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* Mobile Card Layout */
+        .mobile-reservation-card {
+            display: none;
+            background: white;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #667eea;
+        }
+
+        .mobile-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .mobile-card-checkbox {
+            margin-right: 0.5rem;
+        }
+
+        .mobile-card-name {
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #333;
+        }
+
+        .mobile-card-status {
+            padding: 0.25rem 0.5rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .mobile-card-status.status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .mobile-card-status.status-confirmed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .mobile-card-status.status-cancelled {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .mobile-card-status.status-rejected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .mobile-card-status.status-restored {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .mobile-card-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .mobile-card-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .mobile-card-label {
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 0.2rem;
+        }
+
+        .mobile-card-value {
+            font-size: 0.9rem;
+            color: #333;
+            word-break: break-word;
+        }
+
+        .mobile-card-special {
+            grid-column: 1 / -1;
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid #eee;
+        }
+
+        .mobile-card-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .mobile-card-actions .btn {
+            flex: 1;
+            min-width: 80px;
+            font-size: 0.8rem;
+            padding: 0.4rem 0.6rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .nav-buttons {
+                flex-direction: column;
+                gap: 0.5rem;
+                align-items: stretch;
+            }
+
+            .nav-btn {
+                text-align: center;
+                padding: 0.75rem 1rem;
+            }
+
+            .bulk-actions {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.5rem;
+            }
+
+            .bulk-actions h3 {
+                margin-right: 0;
+                margin-bottom: 0.5rem;
+                text-align: center;
+            }
+
+            .bulk-actions .btn {
+                width: 100%;
+                margin: 0.25rem 0;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .dashboard-title {
+                font-size: 1.8rem;
+                text-align: center;
+            }
+
+            /* Hide table on mobile, show cards */
+            .reservations-table {
+                display: none;
+            }
+
+            .mobile-reservation-card {
+                display: block;
+            }
+
+            .container {
+                padding: 0 10px;
+            }
+
+            .dashboard-header {
+                padding: 1rem;
+            }
+
+            .bulk-actions {
+                padding: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .reservations-table {
+                font-size: 0.6rem;
+            }
+
+            .reservations-table th,
+            .reservations-table td {
+                padding: 0.3rem 0.1rem;
+                min-width: 70px;
+            }
+
+            .btn {
+                font-size: 0.6rem;
+                padding: 0.15rem 0.3rem;
+            }
+
+            .dashboard-title {
+                font-size: 1.5rem;
+            }
+        }
+
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 0.3rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.2rem 0.6rem;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .btn-confirm {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-confirm:hover {
+            background: #218838;
+        }
+
+        .btn-cancel {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-cancel:hover {
+            background: #c82333;
+        }
+
+        .btn-view {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .btn-view:hover {
+            background: #138496;
+        }
+
+        .btn-approve {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-approve:hover {
+            background: #218838;
+        }
+
+        .btn-reject {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-reject:hover {
+            background: #c82333;
+        }
+
+        .btn-cancel {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn-cancel:hover {
+            background: #e0a800;
+        }
+
+        /* 버튼 포커스 및 액티브 상태 */
+        .btn:focus {
+            outline: 2px solid #007bff;
+            outline-offset: 2px;
+        }
+
+        .btn:active {
+            opacity: 0.8;
+        }
+
+        /* 버튼 비활성화 상태 */
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn:disabled:hover {
+            background: inherit;
+        }
+
+        /* 모달 스타일 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 2rem;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            color: #333;
+            margin: 0;
+        }
+
+        .close {
+            color: #aaa;
+            font-size: 2rem;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        .modal-body {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1rem;
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+
+        .btn-modal {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-modal-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-modal-primary:hover {
+            background: #0056b3;
+        }
+
+        .btn-modal-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-modal-secondary:hover {
+            background: #545b62;
+        }
+
+        .notification-status {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .status-sent {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-failed {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <a href="index.html" class="logo">🍽️ 관리자 대시보드</a>
+            <div class="nav-buttons">
+                <a href="index.html" target="_blank" class="nav-btn home-btn">🏠 홈</a>
+                <button class="nav-btn refresh-btn" onclick="refreshData()">🔄 새로고침</button>
+                <button class="nav-btn logout-btn" onclick="logout()">🚪 로그아웃</button>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <div class="container">
+            <div class="dashboard-header">
+                <h1 class="dashboard-title">예약 관리 대시보드</h1>
+                <p class="dashboard-subtitle">실시간 예약 현황을 확인하고 관리하세요</p>
+            </div>
+
+            <div class="bulk-actions">
+                <h3>대량 작업</h3>
+                <button class="btn btn-select-all" onclick="toggleSelectAll()">전체 선택</button>
+                <button class="btn btn-delete-selected" onclick="deleteSelected()">선택 삭제</button>
+                <button class="btn btn-delete-all" onclick="deleteAllReservations()">전체 삭제</button>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalReservations">0</div>
+                    <div class="stat-label">총 예약 수</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="pendingReservations">0</div>
+                    <div class="stat-label">대기 중</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="confirmedReservations">0</div>
+                    <div class="stat-label">확정됨</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="todayReservations">0</div>
+                    <div class="stat-label">오늘 예약</div>
+                </div>
+            </div>
+
+            <div class="reservations-section">
+                <div class="section-header">
+                    <h2 class="section-title">예약 목록</h2>
+                    <p class="section-subtitle">모든 예약 정보를 실시간으로 확인할 수 있습니다</p>
+                </div>
+                
+                <div class="table-container">
+                    <div class="loading" id="loadingState">
+                        <div class="spinner"></div>
+                        <p>예약 데이터를 불러오는 중...</p>
+                    </div>
+                    
+                    <div class="empty-state" id="emptyState" style="display: none;">
+                        <div class="empty-icon">📋</div>
+                        <p>아직 예약이 없습니다</p>
+                    </div>
+                    
+                    <table class="reservations-table" id="reservationsTable" style="display: none;">
+                        <thead>
+                            <tr>
+                                <th class="checkbox-column">
+                                    <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()">
+                                </th>
+                                <th>예약자</th>
+                                <th>연락처</th>
+                                <th>이메일</th>
+                                <th>예약일시</th>
+                                <th>인원</th>
+                                <th>테이블</th>
+                                <th>상태</th>
+                                <th>알림상태</th>
+                                <th>예약시간</th>
+                                <th>특별요청</th>
+                                <th>관리</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reservationsTableBody">
+                        </tbody>
+                    </table>
+                    
+                    <!-- Mobile Card Container -->
+                    <div id="mobileReservationsContainer" class="mobile-reservations-container">
+                        <!-- Mobile cards will be inserted here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 거절 사유 모달 -->
+    <div id="rejectModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">예약 거절</h3>
+                <span class="close" onclick="closeRejectModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="rejectReason">거절 사유</label>
+                    <select id="rejectReason" required>
+                        <option value="">사유를 선택하세요</option>
+                        <option value="closed">신청일 휴무</option>
+                        <option value="full">예약이 이미 마감</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="rejectMessage">추가 메시지 (선택사항)</label>
+                    <textarea id="rejectMessage" placeholder="고객에게 전달할 추가 메시지를 입력하세요"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-modal btn-modal-secondary" onclick="closeRejectModal()">취소</button>
+                <button class="btn-modal btn-modal-primary" onclick="confirmRejection()">거절 전송</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let reservations = [];
+
+        // 체크박스 관련 함수들
+        function toggleSelectAll() {
+            const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+            const checkboxes = document.querySelectorAll('.reservation-checkbox');
+            
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAllCheckbox.checked;
+            });
+        }
+
+        function updateSelectAllState() {
+            const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+            const checkboxes = document.querySelectorAll('.reservation-checkbox');
+            const checkedCount = document.querySelectorAll('.reservation-checkbox:checked').length;
+            
+            if (checkedCount === 0) {
+                selectAllCheckbox.indeterminate = false;
+                selectAllCheckbox.checked = false;
+            } else if (checkedCount === checkboxes.length) {
+                selectAllCheckbox.indeterminate = false;
+                selectAllCheckbox.checked = true;
+            } else {
+                selectAllCheckbox.indeterminate = true;
+            }
+        }
+
+        function getSelectedReservations() {
+            const checkboxes = document.querySelectorAll('.reservation-checkbox:checked');
+            return Array.from(checkboxes).map(checkbox => checkbox.value);
+        }
+
+        function deleteSelected() {
+            const selectedIds = getSelectedReservations();
+            
+            if (selectedIds.length === 0) {
+                alert('삭제할 예약을 선택해주세요.');
+                return;
+            }
+            
+            if (confirm(`선택한 ${selectedIds.length}개의 예약을 삭제하시겠습니까?`)) {
+                selectedIds.forEach(id => {
+                    deleteReservation(id);
+                });
+                
+                // 체크박스 상태 초기화
+                document.getElementById('selectAllCheckbox').checked = false;
+                document.getElementById('selectAllCheckbox').indeterminate = false;
+            }
+        }
+
+        function deleteAllReservations() {
+            if (reservations.length === 0) {
+                alert('삭제할 예약이 없습니다.');
+                return;
+            }
+            
+            if (confirm(`모든 예약 ${reservations.length}개를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`)) {
+                reservations.forEach(reservation => {
+                    deleteReservation(reservation.id);
+                });
+                
+                // 체크박스 상태 초기화
+                document.getElementById('selectAllCheckbox').checked = false;
+                document.getElementById('selectAllCheckbox').indeterminate = false;
+            }
+        }
+
+        function deleteReservation(id) {
+            // 로컬 저장소에서 삭제
+            const localReservations = JSON.parse(localStorage.getItem('reservations') || '[]');
+            const updatedReservations = localReservations.filter(r => r.id !== id);
+            localStorage.setItem('reservations', JSON.stringify(updatedReservations));
+            
+            // 메모리에서도 삭제
+            reservations = reservations.filter(r => r.id !== id);
+            
+            // 테이블 업데이트
+            updateTable();
+            updateStats();
+            
+            console.log(`예약 ${id}가 삭제되었습니다.`);
+        }
+
+        // 페이지 로드 시 로그인 확인 및 데이터 가져오기
+        document.addEventListener('DOMContentLoaded', function() {
+            // 로그인 상태 확인
+            checkLoginStatus();
+            loadReservations();
+            
+            // 예약 완료 후 관리자 페이지로 온 경우 새로고침
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('from') === 'reservation') {
+                // URL 파라미터 제거
+                const newUrl = window.location.pathname;
+                window.history.replaceState({}, document.title, newUrl);
+                
+                // 데이터 새로고침
+                setTimeout(() => {
+                    refreshData();
+                }, 1000);
+            }
+        });
+
+        // 로그인 상태 확인
+        function checkLoginStatus() {
+            const isLoggedIn = sessionStorage.getItem('adminLoggedIn');
+            const loginTime = sessionStorage.getItem('loginTime');
+            
+            if (!isLoggedIn) {
+                // 로그인되지 않은 경우 로그인 페이지로 리다이렉트
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            // 24시간 후 자동 로그아웃
+            if (loginTime) {
+                const loginDate = new Date(loginTime);
+                const now = new Date();
+                const hoursDiff = (now - loginDate) / (1000 * 60 * 60);
+                
+                if (hoursDiff > 24) {
+                    sessionStorage.removeItem('adminLoggedIn');
+                    sessionStorage.removeItem('loginTime');
+                    window.location.href = 'login.html';
+                    return;
+                }
+            }
+        }
+
+        // 로그아웃 기능
+        function logout() {
+            sessionStorage.removeItem('adminLoggedIn');
+            sessionStorage.removeItem('loginTime');
+            window.location.href = 'login.html';
+        }
+
+        // 예약 데이터 로드
+        async function loadReservations() {
+            const loadingState = document.getElementById('loadingState');
+            const emptyState = document.getElementById('emptyState');
+            const table = document.getElementById('reservationsTable');
+            
+            loadingState.style.display = 'block';
+            emptyState.style.display = 'none';
+            table.style.display = 'none';
+
+            try {
+                // Firebase 앱이 초기화되었는지 확인
+                if (typeof window.firebaseApp === 'undefined') {
+                    console.log('Firebase 앱이 초기화되지 않음. 로컬 스토리지에서 데이터 로드 시도...');
+                    loadFromLocalStorage();
+                    return;
+                }
+
+                const result = await window.firebaseApp.getAllReservations();
+                
+                if (result.success) {
+                    reservations = result.data;
+                    updateDashboard();
+                } else {
+                    console.error('Firebase 데이터 로드 실패:', result.error);
+                    console.log('로컬 스토리지에서 데이터 로드 시도...');
+                    loadFromLocalStorage();
+                }
+            } catch (error) {
+                console.error('데이터 로드 오류:', error);
+                console.log('로컬 스토리지에서 데이터 로드 시도...');
+                loadFromLocalStorage();
+            }
+        }
+
+        // 로컬 스토리지에서 데이터 로드
+        function loadFromLocalStorage() {
+            try {
+                const localData = localStorage.getItem('reservations');
+                if (localData) {
+                    reservations = JSON.parse(localData);
+                    console.log('로컬 스토리지에서 예약 데이터 로드됨:', reservations.length + '개');
+                    updateDashboard();
+                } else {
+                    console.log('로컬 스토리지에 예약 데이터가 없음');
+                    showEmptyState();
+                }
+            } catch (error) {
+                console.error('로컬 스토리지 데이터 로드 오류:', error);
+                showEmptyState();
+            }
+        }
+
+        // 실시간 구독 시작
+        function startRealtimeSubscription() {
+            if (typeof window.firebaseApp !== 'undefined') {
+                try {
+                    window.firebaseApp.subscribeToReservations((data) => {
+                        reservations = data;
+                        updateDashboard();
+                    });
+                } catch (error) {
+                    console.log('실시간 구독 실패, 로컬 스토리지 모드로 동작:', error);
+                }
+            } else {
+                console.log('Firebase 앱이 없어 실시간 구독을 건너뜀');
+            }
+        }
+
+        // 대시보드 업데이트
+        function updateDashboard() {
+            const loadingState = document.getElementById('loadingState');
+            const emptyState = document.getElementById('emptyState');
+            const table = document.getElementById('reservationsTable');
+            
+            loadingState.style.display = 'none';
+
+            if (reservations.length === 0) {
+                showEmptyState();
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            table.style.display = 'table';
+
+            // 통계 업데이트
+            updateStats();
+            
+            // 테이블 업데이트
+            updateTable();
+        }
+
+        // 빈 상태 표시
+        function showEmptyState() {
+            const loadingState = document.getElementById('loadingState');
+            const emptyState = document.getElementById('emptyState');
+            const table = document.getElementById('reservationsTable');
+            
+            loadingState.style.display = 'none';
+            emptyState.style.display = 'block';
+            table.style.display = 'none';
+        }
+
+        // 통계 업데이트
+        function updateStats() {
+            const total = reservations.length;
+            const pending = reservations.filter(r => r.status === 'pending').length;
+            const confirmed = reservations.filter(r => r.status === 'confirmed').length;
+            const cancelled = reservations.filter(r => r.status === 'cancelled').length;
+            
+            // 오늘 날짜 설정 (시간을 00:00:00으로 설정)
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            const todayReservations = reservations.filter(r => {
+                // 예약 날짜가 오늘인지 확인
+                if (!r.date) return false;
+                
+                // 예약 날짜를 Date 객체로 변환
+                const reservationDate = new Date(r.date);
+                reservationDate.setHours(0, 0, 0, 0);
+                
+                // 날짜 비교 (년, 월, 일만 비교)
+                const isToday = reservationDate.getTime() === today.getTime();
+                
+                // 디버깅 정보
+                console.log(`예약: ${r.name}, 원본 날짜: ${r.date}, 변환된 날짜: ${reservationDate.toISOString().split('T')[0]}, 오늘: ${today.toISOString().split('T')[0]}, 일치: ${isToday}`);
+                
+                return isToday;
+            }).length;
+
+            // 디버깅을 위한 콘솔 로그
+            console.log('오늘 날짜:', today.toISOString().split('T')[0]);
+            console.log('전체 예약:', reservations.length);
+            console.log('오늘 예약:', todayReservations);
+            console.log('예약 날짜들:', reservations.map(r => r.date));
+
+            document.getElementById('totalReservations').textContent = total;
+            document.getElementById('pendingReservations').textContent = pending;
+            document.getElementById('confirmedReservations').textContent = confirmed;
+            document.getElementById('todayReservations').textContent = todayReservations;
+        }
+
+        // 모바일 카드 생성
+        function createMobileCard(reservation) {
+            const tableTypeMap = {
+                'window': '창가',
+                'private': '개인실',
+                'outdoor': '야외',
+                'regular': '일반',
+                '': '일반'
+            };
+
+            const formattedDate = new Date(reservation.date).toLocaleDateString('ko-KR', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                weekday: 'short'
+            });
+
+            const formattedTime = new Date(reservation.createdAt).toLocaleString('ko-KR', {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            const notificationStatus = getNotificationStatus(reservation);
+            const actionButtons = getActionButtons(reservation);
+
+            return `
+                <div class="mobile-reservation-card">
+                    <div class="mobile-card-header">
+                        <div style="display: flex; align-items: center;">
+                            <input type="checkbox" class="mobile-card-checkbox reservation-checkbox" value="${reservation.id}" onchange="updateSelectAllState()">
+                            <span class="mobile-card-name">${reservation.name}</span>
+                        </div>
+                        <span class="mobile-card-status status-${reservation.status}">${getStatusText(reservation.status)}</span>
+                    </div>
+                    
+                    <div class="mobile-card-info">
+                        <div class="mobile-card-item">
+                            <span class="mobile-card-label">연락처</span>
+                            <span class="mobile-card-value">${reservation.phone}</span>
+                        </div>
+                        <div class="mobile-card-item">
+                            <span class="mobile-card-label">이메일</span>
+                            <span class="mobile-card-value">${reservation.email || '-'}</span>
+                        </div>
+                        <div class="mobile-card-item">
+                            <span class="mobile-card-label">예약일</span>
+                            <span class="mobile-card-value">${formattedDate}</span>
+                        </div>
+                        <div class="mobile-card-item">
+                            <span class="mobile-card-label">예약시간</span>
+                            <span class="mobile-card-value">${reservation.time}</span>
+                        </div>
+                        <div class="mobile-card-item">
+                            <span class="mobile-card-label">인원</span>
+                            <span class="mobile-card-value">${reservation.guests}명</span>
+                        </div>
+                        <div class="mobile-card-item">
+                            <span class="mobile-card-label">테이블</span>
+                            <span class="mobile-card-value">${tableTypeMap[reservation.table] || reservation.table}</span>
+                        </div>
+                        <div class="mobile-card-item">
+                            <span class="mobile-card-label">알림상태</span>
+                            <span class="mobile-card-value notification-status ${notificationStatus.class}">${notificationStatus.text}</span>
+                        </div>
+                        <div class="mobile-card-item">
+                            <span class="mobile-card-label">신청시간</span>
+                            <span class="mobile-card-value">${formattedTime}</span>
+                        </div>
+                    </div>
+                    
+                    ${reservation.special ? `
+                        <div class="mobile-card-special">
+                            <span class="mobile-card-label">특별요청</span>
+                            <span class="mobile-card-value">${reservation.special}</span>
+                        </div>
+                    ` : ''}
+                    
+                    <div class="mobile-card-actions">
+                        ${actionButtons}
+                    </div>
+                </div>
+            `;
+        }
+
+        // 테이블 업데이트
+        function updateTable() {
+            const tbody = document.getElementById('reservationsTableBody');
+            const mobileContainer = document.getElementById('mobileReservationsContainer');
+            
+            // PC 테이블 업데이트
+            tbody.innerHTML = reservations.map(reservation => {
+                const tableTypeMap = {
+                    'window': '창가',
+                    'private': '개인실',
+                    'outdoor': '야외',
+                    'regular': '일반',
+                    '': '일반'
+                };
+
+                const formattedDate = new Date(reservation.date).toLocaleDateString('ko-KR', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    weekday: 'short'
+                });
+
+                const formattedTime = new Date(reservation.createdAt).toLocaleString('ko-KR', {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+
+                const notificationStatus = getNotificationStatus(reservation);
+                const actionButtons = getActionButtons(reservation);
+
+                return `
+                    <tr>
+                        <td class="checkbox-column">
+                            <input type="checkbox" class="reservation-checkbox" value="${reservation.id}" onchange="updateSelectAllState()">
+                        </td>
+                        <td title="${reservation.name}">${reservation.name}</td>
+                        <td title="${reservation.phone}">${reservation.phone}</td>
+                        <td title="${reservation.email || '-'}">${reservation.email || '-'}</td>
+                        <td title="${formattedDate} ${reservation.time}">${formattedDate}<br><small>${reservation.time}</small></td>
+                        <td>${reservation.guests}명</td>
+                        <td><span class="table-type">${tableTypeMap[reservation.table] || reservation.table}</span></td>
+                        <td><span class="status-badge status-${reservation.status}">${getStatusText(reservation.status)}</span></td>
+                        <td><span class="notification-status ${notificationStatus.class}">${notificationStatus.text}</span></td>
+                        <td title="${formattedTime}">${formattedTime}</td>
+                        <td title="${reservation.special || '-'}">${reservation.special || '-'}</td>
+                        <td>
+                            <div class="action-buttons">
+                                ${actionButtons}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            // 모바일 카드 업데이트
+            mobileContainer.innerHTML = reservations.map(reservation => createMobileCard(reservation)).join('');
+
+            // 테이블 표시/숨김 처리
+            if (reservations.length > 0) {
+                document.getElementById('reservationsTable').style.display = 'table';
+                document.getElementById('emptyState').style.display = 'none';
+            } else {
+                document.getElementById('reservationsTable').style.display = 'none';
+                document.getElementById('emptyState').style.display = 'block';
+            }
+        }
+
+        // 상태 텍스트 변환
+        function getStatusText(status) {
+            const statusMap = {
+                'pending': '대기중',
+                'confirmed': '확정',
+                'cancelled': '취소됨',
+                'rejected': '거절됨',
+                'restored': '복구됨'
+            };
+            return statusMap[status] || status;
+        }
+
+        // 알림 상태 확인
+        function getNotificationStatus(reservation) {
+            if (reservation.notificationSent) {
+                return { class: 'status-sent', text: '전송완료' };
+            } else if (reservation.status === 'confirmed') {
+                return { class: 'status-pending', text: '전송대기' };
+            } else if (reservation.status === 'rejected') {
+                return { class: 'status-sent', text: '거절전송' };
+            } else {
+                return { class: 'status-pending', text: '대기중' };
+            }
+        }
+
+        // 액션 버튼 생성
+        function getActionButtons(reservation) {
+            let buttons = `<button class="btn btn-view" onclick="viewReservation('${reservation.id}')">보기</button>`;
+            
+            if (reservation.status === 'pending') {
+                buttons += `<button class="btn btn-approve" onclick="approveReservation('${reservation.id}')">승인</button>`;
+                buttons += `<button class="btn btn-reject" onclick="showRejectModal('${reservation.id}')">거절</button>`;
+                buttons += `<button class="btn btn-cancel" onclick="cancelReservation('${reservation.id}')">취소</button>`;
+            } else if (reservation.status === 'confirmed') {
+                buttons += `<button class="btn btn-reject" onclick="showRejectModal('${reservation.id}')">거절</button>`;
+                buttons += `<button class="btn btn-cancel" onclick="cancelReservation('${reservation.id}')">취소</button>`;
+            } else if (reservation.status === 'cancelled') {
+                buttons += `<button class="btn btn-approve" onclick="restoreReservation('${reservation.id}')">복구</button>`;
+            }
+            
+            return buttons;
+        }
+
+        // 예약 상세 보기
+        function viewReservation(id) {
+            const reservation = reservations.find(r => r.id === id);
+            if (reservation) {
+                const formattedDate = new Date(reservation.date).toLocaleDateString('ko-KR', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    weekday: 'long'
+                });
+
+                alert(`예약 상세 정보:\n\n` +
+                      `이름: ${reservation.name}\n` +
+                      `연락처: ${reservation.phone}\n` +
+                      `이메일: ${reservation.email || '없음'}\n` +
+                      `예약일: ${formattedDate}\n` +
+                      `시간: ${reservation.time}\n` +
+                      `인원: ${reservation.guests}명\n` +
+                      `테이블: ${reservation.table || '일반'}\n` +
+                      `특별요청: ${reservation.special || '없음'}\n` +
+                      `예약신청시간: ${new Date(reservation.createdAt).toLocaleString('ko-KR')}\n` +
+                      `상태: ${getStatusText(reservation.status)}`);
+            }
+        }
+
+        // 예약 승인
+        async function approveReservation(id) {
+            if (confirm('이 예약을 승인하시겠습니까?')) {
+                const reservation = reservations.find(r => r.id === id);
+                if (reservation) {
+                    try {
+                        // 카카오톡 알림 전송
+                        const kakao = new window.KakaoNotification();
+                        const message = kakao.generateApprovalMessage(reservation);
+                        
+                        // SMS로 대체 전송 (실제 카카오톡 API 연동 시 교체)
+                        const result = await kakao.sendSMSNotification(reservation.phone, message);
+                        
+                        if (result.success) {
+                            // 예약 상태 업데이트
+                            reservation.status = 'confirmed';
+                            reservation.notificationSent = true;
+                            reservation.approvedAt = new Date().toISOString();
+                            
+                            // 로컬 스토리지에 저장
+                            saveToLocalStorage();
+                            
+                            updateTable();
+                            alert('예약이 승인되었고 고객에게 알림이 전송되었습니다.');
+                        } else {
+                            alert('알림 전송에 실패했습니다. 다시 시도해주세요.');
+                        }
+                    } catch (error) {
+                        console.error('예약 승인 오류:', error);
+                        alert('예약 승인 중 오류가 발생했습니다.');
+                    }
+                }
+            }
+        }
+
+        // 거절 모달 표시
+        function showRejectModal(id) {
+            const modal = document.getElementById('rejectModal');
+            modal.style.display = 'block';
+            modal.dataset.reservationId = id;
+            
+            // 폼 초기화
+            document.getElementById('rejectReason').value = '';
+            document.getElementById('rejectMessage').value = '';
+        }
+
+        // 거절 모달 닫기
+        function closeRejectModal() {
+            const modal = document.getElementById('rejectModal');
+            modal.style.display = 'none';
+        }
+
+        // 거절 확인
+        async function confirmRejection() {
+            const reason = document.getElementById('rejectReason').value;
+            const message = document.getElementById('rejectMessage').value;
+            const reservationId = document.getElementById('rejectModal').dataset.reservationId;
+            
+            if (!reason) {
+                alert('거절 사유를 선택해주세요.');
+                return;
+            }
+            
+            const reservation = reservations.find(r => r.id === reservationId);
+            if (reservation) {
+                try {
+                    // 카카오톡 알림 전송
+                    const kakao = new window.KakaoNotification();
+                    const rejectionMessage = kakao.generateRejectionMessage(reservation, reason);
+                    
+                    // SMS로 대체 전송 (실제 카카오톡 API 연동 시 교체)
+                    const result = await kakao.sendSMSNotification(reservation.phone, rejectionMessage);
+                    
+                    if (result.success) {
+                        // 예약 상태 업데이트
+                        reservation.status = 'rejected';
+                        reservation.notificationSent = true;
+                        reservation.rejectedAt = new Date().toISOString();
+                        reservation.rejectionReason = reason;
+                        reservation.rejectionMessage = message;
+                        
+                        // 로컬 스토리지에 저장
+                        saveToLocalStorage();
+                        
+                        updateTable();
+                        closeRejectModal();
+                        alert('예약이 거절되었고 고객에게 알림이 전송되었습니다.');
+                    } else {
+                        alert('알림 전송에 실패했습니다. 다시 시도해주세요.');
+                    }
+                } catch (error) {
+                    console.error('예약 거절 오류:', error);
+                    alert('예약 거절 중 오류가 발생했습니다.');
+                }
+            }
+        }
+
+        // 로컬 스토리지에 저장
+        function saveToLocalStorage() {
+            try {
+                localStorage.setItem('reservations', JSON.stringify(reservations));
+                console.log('예약 데이터가 로컬 스토리지에 저장됨');
+            } catch (error) {
+                console.error('로컬 스토리지 저장 오류:', error);
+            }
+        }
+
+        // 예약 취소
+        async function cancelReservation(id) {
+            if (confirm('이 예약을 취소하시겠습니까?')) {
+                const reservation = reservations.find(r => r.id === id);
+                if (reservation) {
+                    try {
+                        // 카카오톡 취소 알림 전송
+                        const kakao = new window.KakaoNotification();
+                        const cancelMessage = `안녕하세요, 프놈펜 한식당입니다.\n\n예약이 취소되었습니다.\n\n예약 정보:\n- 예약자: ${reservation.name}\n- 예약일: ${new Date(reservation.date).toLocaleDateString('ko-KR')}\n- 시간: ${reservation.time}\n- 인원: ${reservation.guests}명\n\n다음에 다시 이용해주시면 감사하겠습니다.`;
+                        
+                        // SMS로 대체 전송
+                        const result = await kakao.sendSMSNotification(reservation.phone, cancelMessage);
+                        
+                        if (result.success) {
+                            // 예약 상태 업데이트
+                            reservation.status = 'cancelled';
+                            reservation.notificationSent = true;
+                            reservation.cancelledAt = new Date().toISOString();
+                            
+                            // 로컬 스토리지에 저장
+                            saveToLocalStorage();
+                            
+                            updateTable();
+                            alert('예약이 취소되었고 고객에게 알림이 전송되었습니다.');
+                        } else {
+                            alert('알림 전송에 실패했습니다. 다시 시도해주세요.');
+                        }
+                    } catch (error) {
+                        console.error('예약 취소 오류:', error);
+                        alert('예약 취소 중 오류가 발생했습니다.');
+                    }
+                }
+            }
+        }
+
+        // 예약 복구
+        async function restoreReservation(id) {
+            if (confirm('이 예약을 복구하시겠습니까?')) {
+                const reservation = reservations.find(r => r.id === id);
+                if (reservation) {
+                    try {
+                        // 예약 상태를 대기중으로 복구
+                        reservation.status = 'pending';
+                        reservation.notificationSent = false;
+                        reservation.restoredAt = new Date().toISOString();
+                        
+                        // 로컬 스토리지에 저장
+                        saveToLocalStorage();
+                        
+                        updateTable();
+                        alert('예약이 복구되었습니다.');
+                    } catch (error) {
+                        console.error('예약 복구 오류:', error);
+                        alert('예약 복구 중 오류가 발생했습니다.');
+                    }
+                }
+            }
+        }
+
+        // 데이터 새로고침
+        function refreshData() {
+            loadReservations();
+        }
+
+        // 페이지 로드 후 실시간 구독 시작
+        setTimeout(() => {
+            startRealtimeSubscription();
+        }, 1000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>아늑한 분위기 - 프놈펜 한식당</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header */
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+        }
+
+        .logo {
+            font-size: 2rem;
+            font-weight: bold;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo-image {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+        }
+
+        .logo-text {
+            display: flex;
+            align-items: center;
+            gap: 0.2rem;
+        }
+
+        .phnom-penh {
+            color: #2196F3;
+        }
+
+        .han-sik-dang {
+            color: #f44336;
+        }
+
+        .back-btn {
+            background: #28a745;
+            color: white;
+            padding: 0.5rem 1rem;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        /* Main Content */
+        main {
+            margin-top: 80px;
+            padding: 4rem 0;
+        }
+
+        .page-header {
+            text-align: center;
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 3rem;
+        }
+
+        .page-title {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .page-subtitle {
+            font-size: 1.3rem;
+            opacity: 0.9;
+        }
+
+        .gallery-section {
+            background: white;
+            padding: 4rem 0;
+            margin: 2rem 0;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .gallery-item {
+            text-align: center;
+            padding: 1.5rem;
+            border-radius: 15px;
+            background: #f8f9fa;
+            transition: transform 0.3s ease;
+        }
+
+        .gallery-item:hover {
+            transform: translateY(-5px);
+        }
+
+        .gallery-image {
+            width: 100%;
+            height: 280px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .gallery-title {
+            font-size: 1.3rem;
+            color: #667eea;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .gallery-description {
+            color: #666;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .section-description {
+            text-align: center;
+            font-size: 1.2rem;
+            color: #666;
+            margin-bottom: 3rem;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .page-title {
+                font-size: 2.5rem;
+            }
+
+            .page-subtitle {
+                font-size: 1.1rem;
+            }
+
+            .gallery-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .gallery-image {
+                height: 220px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <a href="index.html" class="logo">
+                <img src="images/청사초롱로고.png" alt="청사초롱 로고" class="logo-image">
+                <div class="logo-text">
+                    <span class="phnom-penh">프놈펜</span>
+                    <span class="han-sik-dang">한식당</span>
+                </div>
+            </a>
+            <a href="index.html" class="back-btn">홈으로 돌아가기</a>
+        </nav>
+    </header>
+
+    <main>
+        <div class="container">
+            <div class="page-header">
+                <h1 class="page-title">🏠 아늑한 분위기</h1>
+                <p class="page-subtitle">가족과 친구들과 함께 즐거운 시간을 보낼 수 있는 공간</p>
+            </div>
+
+            <div class="gallery-section">
+                <div class="section-description">
+                    <p>맛있는 식당은 가족과 친구들과 함께 즐거운 시간을 보낼 수 있는 
+                    아늑하고 따뜻한 공간입니다. 편안한 분위기에서 특별한 식사 경험을 만나보세요.</p>
+                </div>
+
+                <div class="gallery-grid">
+                    <div class="gallery-item">
+                        <img src="images/식당내부1.jpg" alt="식당 내부 공간 1" class="gallery-image">
+                        <h3 class="gallery-title">아늑한 내부 공간</h3>
+                        <p class="gallery-description">따뜻한 조명과 아늑한 인테리어로 편안한 식사 공간을 제공합니다.</p>
+                    </div>
+
+                    <div class="gallery-item">
+                        <img src="images/식당내부2.jpg" alt="식당 내부 공간 2" class="gallery-image">
+                        <h3 class="gallery-title">편안한 테이블</h3>
+                        <p class="gallery-description">가족과 친구들이 함께 앉아 대화할 수 있는 편안한 테이블입니다.</p>
+                    </div>
+
+                    <div class="gallery-item">
+                        <img src="images/식당내부3.jpg" alt="식당 내부 공간 3" class="gallery-image">
+                        <h3 class="gallery-title">따뜻한 분위기</h3>
+                        <p class="gallery-description">따뜻하고 로맨틱한 분위기로 특별한 순간을 만들어드립니다.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

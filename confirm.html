@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>예약 정보 확인 - 프놈펜 한식당</title>
+    <!-- Firebase SDK CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header */
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+        }
+
+        .logo {
+            font-size: 2rem;
+            font-weight: bold;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo-image {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+        }
+
+        .logo-text {
+            display: flex;
+            align-items: center;
+            gap: 0.2rem;
+        }
+
+        .phnom-penh {
+            color: #2196F3;
+        }
+
+        .han-sik-dang {
+            color: #f44336;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .back-btn, .admin-btn {
+            padding: 0.5rem 1rem;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .back-btn {
+            background: #667eea;
+            color: white;
+        }
+
+        .back-btn:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+
+        .admin-btn {
+            background: #28a745;
+            color: white;
+        }
+
+        .admin-btn:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        /* Main Content */
+        main {
+            margin-top: 80px;
+            padding: 4rem 0;
+        }
+
+        .page-title {
+            text-align: center;
+            color: white;
+            margin-bottom: 3rem;
+        }
+
+        .page-title h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .page-title p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        /* Confirmation Card */
+        .confirmation-card {
+            background: white;
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .confirmation-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .confirmation-header h2 {
+            font-size: 2rem;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .confirmation-header p {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .reservation-details {
+            display: grid;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .detail-row {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 1rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+            align-items: center;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #333;
+            font-size: 1.1rem;
+        }
+
+        .detail-value {
+            color: #555;
+            font-size: 1rem;
+        }
+
+        .special-requests {
+            grid-column: 1 / -1;
+        }
+
+        .special-requests .detail-value {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            min-height: 80px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-3px);
+        }
+
+        .btn-success {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(40, 167, 69, 0.4);
+        }
+
+        /* Status Messages */
+        .status-message {
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            text-align: center;
+            font-weight: 500;
+            display: none;
+        }
+
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        /* 확인 모달 스타일 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 2rem;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+
+        .modal-header {
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .modal-subtitle {
+            color: #666;
+            font-size: 1rem;
+        }
+
+        .modal-body {
+            margin-bottom: 2rem;
+            text-align: left;
+        }
+
+        .reservation-summary {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            padding: 0.25rem 0;
+        }
+
+        .summary-label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .summary-value {
+            color: #555;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .btn-modal {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 100px;
+        }
+
+        .btn-modal-primary {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-modal-primary:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .btn-modal-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-modal-secondary:hover {
+            background: #545b62;
+        }
+
+        .status-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        /* Loading Spinner */
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 1rem 0;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Footer */
+        footer {
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            text-align: center;
+            padding: 2rem 0;
+            margin-top: 4rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .detail-row {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+
+            .confirmation-card {
+                padding: 2rem 1rem;
+            }
+
+            .page-title h1 {
+                font-size: 2.5rem;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <a href="index.html" class="logo">
+                <img src="images/청사초롱로고.png" alt="청사초롱 로고" class="logo-image">
+                <div class="logo-text">
+                    <span class="phnom-penh">프놈펜</span>
+                    <span class="han-sik-dang">한식당</span>
+                </div>
+            </a>
+            <div class="nav-buttons">
+                <a href="reservation.html" class="back-btn">← 수정하기</a>
+                <a href="login.html" class="admin-btn">관리자</a>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section class="page-title">
+            <div class="container">
+                <h1>예약 정보 확인</h1>
+                <p>입력하신 정보를 확인해주세요</p>
+            </div>
+        </section>
+
+        <section class="confirmation-card">
+            <div class="container">
+                <div class="confirmation-header">
+                    <h2>예약 정보</h2>
+                    <p>아래 정보가 정확한지 확인해주세요</p>
+                </div>
+
+                <div class="status-message" id="statusMessage"></div>
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>예약을 처리하고 있습니다...</p>
+                </div>
+
+                <div class="reservation-details" id="reservationDetails">
+                    <!-- 예약 정보가 여기에 동적으로 표시됩니다 -->
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-secondary" onclick="goBack()">수정하기</button>
+                    <button class="btn btn-success" onclick="showConfirmationModal()">예약 확정하기</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 예약 확인 모달 -->
+    <div id="confirmationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">예약 최종 확인</h3>
+                <p class="modal-subtitle">아래 정보가 정확한지 다시 한번 확인해주세요</p>
+            </div>
+            <div class="modal-body">
+                <div class="reservation-summary" id="modalSummary">
+                    <!-- 예약 정보가 여기에 동적으로 표시됩니다 -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-modal btn-modal-secondary" onclick="closeConfirmationModal()">수정하기</button>
+                <button class="btn-modal btn-modal-primary" onclick="confirmFinalReservation()">예약 확정하기</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 프놈펜 한식당. All rights reserved.</p>
+            <p>📞 02-1234-5678 | 📍 서울시 강남구 테헤란로 123</p>
+        </div>
+    </footer>
+
+    <script>
+        let reservationData = {};
+
+        // URL 파라미터에서 예약 정보 가져오기
+        function getReservationFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            reservationData = {
+                name: urlParams.get('name') || '',
+                phone: urlParams.get('phone') || '',
+                email: urlParams.get('email') || '',
+                date: urlParams.get('date') || '',
+                time: urlParams.get('time') || '',
+                guests: urlParams.get('guests') || '',
+                table: urlParams.get('table') || '',
+                special: urlParams.get('special') || ''
+            };
+        }
+
+        // 예약 정보 표시
+        function displayReservationDetails() {
+            const detailsContainer = document.getElementById('reservationDetails');
+            
+            const tableTypeMap = {
+                'window': '창가 테이블',
+                'private': '개인실',
+                'outdoor': '야외 테이블',
+                'regular': '일반 테이블',
+                '': '선택안함'
+            };
+
+            const details = `
+                <div class="detail-row">
+                    <div class="detail-label">이름</div>
+                    <div class="detail-value">${reservationData.name}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">연락처</div>
+                    <div class="detail-value">${reservationData.phone}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">이메일</div>
+                    <div class="detail-value">${reservationData.email || '입력하지 않음'}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">예약 날짜</div>
+                    <div class="detail-value">${formatDate(reservationData.date)}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">예약 시간</div>
+                    <div class="detail-value">${reservationData.time}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">인원 수</div>
+                    <div class="detail-value">${reservationData.guests}명</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">테이블 유형</div>
+                    <div class="detail-value">${tableTypeMap[reservationData.table] || reservationData.table}</div>
+                </div>
+                <div class="detail-row special-requests">
+                    <div class="detail-label">특별 요청사항</div>
+                    <div class="detail-value">${reservationData.special || '없음'}</div>
+                </div>
+            `;
+
+            detailsContainer.innerHTML = details;
+        }
+
+        // 날짜 포맷팅
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('ko-KR', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                weekday: 'long'
+            });
+        }
+
+        // 뒤로 가기
+        function goBack() {
+            // 이전 페이지로 돌아가기 (브라우저 히스토리 사용)
+            window.history.back();
+        }
+
+        // 확인 모달 표시
+        function showConfirmationModal() {
+            const modal = document.getElementById('confirmationModal');
+            const modalSummary = document.getElementById('modalSummary');
+            
+            // 모달에 예약 정보 표시
+            const tableTypeMap = {
+                'window': '창가 테이블',
+                'private': '개인실',
+                'outdoor': '야외 테이블',
+                'regular': '일반 테이블',
+                '': '일반 테이블'
+            };
+
+            const formattedDate = formatDate(reservationData.date);
+
+            modalSummary.innerHTML = `
+                <div class="summary-row">
+                    <span class="summary-label">이름:</span>
+                    <span class="summary-value">${reservationData.name}</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">연락처:</span>
+                    <span class="summary-value">${reservationData.phone}</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">이메일:</span>
+                    <span class="summary-value">${reservationData.email || '입력하지 않음'}</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">예약 날짜:</span>
+                    <span class="summary-value">${formattedDate}</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">예약 시간:</span>
+                    <span class="summary-value">${reservationData.time}</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">인원 수:</span>
+                    <span class="summary-value">${reservationData.guests}명</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">테이블 유형:</span>
+                    <span class="summary-value">${tableTypeMap[reservationData.table] || reservationData.table}</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">특별 요청:</span>
+                    <span class="summary-value">${reservationData.special || '없음'}</span>
+                </div>
+            `;
+            
+            modal.style.display = 'block';
+        }
+
+        // 확인 모달 닫기
+        function closeConfirmationModal() {
+            const modal = document.getElementById('confirmationModal');
+            modal.style.display = 'none';
+        }
+
+        // 최종 예약 확정
+        function confirmFinalReservation() {
+            const loading = document.getElementById('loading');
+            const statusMessage = document.getElementById('statusMessage');
+            const modal = document.getElementById('confirmationModal');
+            
+            // 모달 닫기
+            modal.style.display = 'none';
+            
+            // 로딩 표시
+            loading.style.display = 'block';
+            statusMessage.style.display = 'none';
+
+            // 예약 데이터 유효성 검사
+            if (!reservationData.name || !reservationData.phone || !reservationData.date || !reservationData.time || !reservationData.guests) {
+                loading.style.display = 'none';
+                showStatusMessage('예약 정보가 올바르지 않습니다. 다시 입력해주세요.', 'error');
+                return;
+            }
+
+            try {
+                let result;
+                
+                // Firebase 앱이 로드되었는지 확인
+                if (typeof window.firebaseApp === 'undefined') {
+                    // Firebase 앱이 로드되지 않은 경우 로컬 저장소 사용
+                    console.warn('Firebase 앱이 로드되지 않았습니다. 로컬 저장소를 사용합니다.');
+                    result = saveToLocalStorage(reservationData);
+                    handleReservationResult(result, loading, statusMessage);
+                } else {
+                    // Firebase에 예약 데이터 저장
+                    try {
+                        result = window.firebaseApp.saveReservation(reservationData);
+                        // Promise인 경우 처리
+                        if (result && typeof result.then === 'function') {
+                            result.then(res => {
+                                handleReservationResult(res, loading, statusMessage);
+                            }).catch(err => {
+                                handleReservationError(err, loading, statusMessage);
+                            });
+                            return;
+                        } else {
+                            // 동기 결과 처리
+                            handleReservationResult(result, loading, statusMessage);
+                        }
+                    } catch (error) {
+                        console.error('Firebase 저장 오류:', error);
+                        result = saveToLocalStorage(reservationData);
+                        handleReservationResult(result, loading, statusMessage);
+                    }
+                }
+                
+            } catch (error) {
+                handleReservationError(error, loading, statusMessage);
+            }
+        }
+
+        // 예약 결과 처리
+        function handleReservationResult(result, loading, statusMessage) {
+            // 로딩 숨기기
+            loading.style.display = 'none';
+            
+            if (result && result.success) {
+                // 관리자에게 알림 전송 (시뮬레이션)
+                sendNotificationToAdmin(reservationData);
+                
+                // 성공 메시지 표시
+                showStatusMessage('예약이 성공적으로 확정되었습니다! 곧 연락드리겠습니다.', 'success');
+                
+                // 3초 후 홈페이지로 이동
+                setTimeout(() => {
+                    // 홈페이지로 이동하면서 예약 완료 상태 전달
+                    window.location.href = 'index.html?reservation=success';
+                }, 3000);
+            } else {
+                showStatusMessage(`예약 저장 중 오류가 발생했습니다: ${result?.error || '알 수 없는 오류'}`, 'error');
+            }
+        }
+
+        // 예약 오류 처리
+        function handleReservationError(error, loading, statusMessage) {
+            // 로딩 숨기기
+            loading.style.display = 'none';
+            showStatusMessage(`예약 저장 중 오류가 발생했습니다: ${error.message || '알 수 없는 오류'}`, 'error');
+            console.error('예약 저장 오류:', error);
+        }
+
+        // 로컬 저장소에 데이터 저장 (백업 함수)
+        function saveToLocalStorage(reservationData) {
+            try {
+                const reservations = JSON.parse(localStorage.getItem('reservations') || '[]');
+                const newReservation = {
+                    id: 'local_' + Date.now(),
+                    ...reservationData,
+                    timestamp: new Date(),
+                    status: 'pending',
+                    createdAt: new Date().toISOString()
+                };
+                reservations.unshift(newReservation);
+                localStorage.setItem('reservations', JSON.stringify(reservations));
+                console.log('예약이 로컬 저장소에 저장되었습니다. ID:', newReservation.id);
+                return { success: true, id: newReservation.id };
+            } catch (error) {
+                console.error('로컬 저장소 저장 중 오류 발생:', error);
+                return { success: false, error: error.message };
+            }
+        }
+
+        // 관리자에게 알림 전송
+        function sendNotificationToAdmin(data) {
+            console.log('=== 관리자에게 전달된 예약 정보 ===');
+            console.log('예약자명:', data.name);
+            console.log('연락처:', data.phone);
+            console.log('이메일:', data.email || '없음');
+            console.log('예약일시:', formatDate(data.date) + ' ' + data.time);
+            console.log('인원:', data.guests + '명');
+            console.log('테이블:', data.table || '일반');
+            console.log('특별요청:', data.special || '없음');
+            console.log('예약시간:', new Date().toLocaleString('ko-KR'));
+            console.log('===============================');
+            
+            // 실제 구현에서는 서버 API를 호출하거나 이메일을 발송
+            // 여기서는 콘솔에 로그를 출력하여 시뮬레이션
+        }
+
+        // 관리자에게 예약 정보 전달
+        function sendReservationToAdmin(data) {
+            // 실제 구현에서는 서버 API를 호출하거나 이메일을 발송
+            console.log('=== 관리자에게 전달된 예약 정보 ===');
+            console.log('예약자명:', data.name);
+            console.log('연락처:', data.phone);
+            console.log('이메일:', data.email || '없음');
+            console.log('예약일시:', formatDate(data.date) + ' ' + data.time);
+            console.log('인원:', data.guests + '명');
+            console.log('테이블:', data.table || '일반');
+            console.log('특별요청:', data.special || '없음');
+            console.log('예약시간:', new Date().toLocaleString('ko-KR'));
+            console.log('===============================');
+
+            // 실제 구현 예시 (주석 처리)
+            /*
+            fetch('/api/reservations', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    ...data,
+                    timestamp: new Date().toISOString(),
+                    status: 'pending'
+                })
+            })
+            .then(response => response.json())
+            .then(result => {
+                console.log('예약 정보가 서버에 저장되었습니다:', result);
+            })
+            .catch(error => {
+                console.error('예약 정보 전송 실패:', error);
+            });
+            */
+        }
+
+        // 상태 메시지 표시
+        function showStatusMessage(message, type) {
+            const statusMessage = document.getElementById('statusMessage');
+            const loading = document.getElementById('loading');
+            
+            // 로딩 숨기기
+            loading.style.display = 'none';
+            
+            // 상태 메시지 표시
+            statusMessage.textContent = message;
+            statusMessage.className = `status-message status-${type}`;
+            statusMessage.style.display = 'block';
+        }
+
+        // 페이지 로드 시 실행
+        document.addEventListener('DOMContentLoaded', function() {
+            getReservationFromURL();
+            
+            // 필수 정보가 없으면 이전 페이지로 리다이렉트
+            if (!reservationData.name || !reservationData.phone || !reservationData.date || !reservationData.time || !reservationData.guests) {
+                showStatusMessage('예약 정보가 올바르지 않습니다. 다시 입력해주세요.', 'error');
+                setTimeout(() => {
+                    window.location.href = 'reservation.html';
+                }, 2000);
+                return;
+            }
+            
+            displayReservationDetails();
+        });
+    </script>
+</body>
+</html>

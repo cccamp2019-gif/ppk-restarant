@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase 설정 가이드 - 프놈펜 한식당</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .header h1 {
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .step {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .step h3 {
+            color: #667eea;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .step-number {
+            background: #667eea;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+            font-weight: bold;
+        }
+
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            margin: 1rem 0;
+            overflow-x: auto;
+        }
+
+        .highlight {
+            background: #fff3cd;
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid #ffc107;
+            margin: 1rem 0;
+        }
+
+        .warning {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid #dc3545;
+            margin: 1rem 0;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+            margin: 1rem 0;
+        }
+
+        .button {
+            background: #667eea;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 0.5rem;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+
+        .button:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+
+        .button.secondary {
+            background: #6c757d;
+        }
+
+        .button.secondary:hover {
+            background: #545b62;
+        }
+
+        .config-form {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            margin: 1rem 0;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .screenshot {
+            max-width: 100%;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔥 Firebase 설정 가이드</h1>
+            <p>예약 시스템에 Firebase 데이터베이스를 연결하는 방법을 안내합니다</p>
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">1</span>Firebase 프로젝트 생성</h3>
+            <p>Firebase 콘솔에서 새 프로젝트를 생성합니다.</p>
+            <ol>
+                <li><a href="https://console.firebase.google.com" target="_blank" class="button">Firebase 콘솔 열기</a></li>
+                <li>"프로젝트 추가" 또는 "Add project" 클릭</li>
+                <li>프로젝트 이름 입력 (예: "restaurant-reservation")</li>
+                <li>Google Analytics 활성화 (선택사항)</li>
+                <li>프로젝트 생성 완료</li>
+            </ol>
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">2</span>Firestore 데이터베이스 설정</h3>
+            <p>Firestore 데이터베이스를 활성화하고 보안 규칙을 설정합니다.</p>
+            <ol>
+                <li>생성된 프로젝트에서 "Firestore Database" 클릭</li>
+                <li>"데이터베이스 만들기" 클릭</li>
+                <li>보안 규칙 모드 선택:
+                    <div class="highlight">
+                        <strong>개발용:</strong> 테스트 모드 (모든 읽기/쓰기 허용)<br>
+                        <strong>운영용:</strong> 프로덕션 모드 (보안 규칙 설정 필요)
+                    </div>
+                </li>
+                <li>위치 선택 (asia-northeast3 - 서울 권장)</li>
+                <li>데이터베이스 생성 완료</li>
+            </ol>
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">3</span>웹 앱 설정</h3>
+            <p>웹 애플리케이션을 위한 Firebase 설정을 가져옵니다.</p>
+            <ol>
+                <li>프로젝트 개요에서 웹 아이콘(</>) 클릭</li>
+                <li>앱 닉네임 입력 (예: "restaurant-web")</li>
+                <li>"Firebase Hosting 설정" 체크 해제</li>
+                <li>"앱 등록" 클릭</li>
+                <li>Firebase SDK 설정 코드 복사</li>
+            </ol>
+            
+            <div class="highlight">
+                <strong>설정 코드 예시:</strong>
+                <div class="code-block">
+const firebaseConfig = {
+  apiKey: "AIzaSyB...",
+  authDomain: "your-project.firebaseapp.com",
+  projectId: "your-project-id",
+  storageBucket: "your-project.appspot.com",
+  messagingSenderId: "123456789",
+  appId: "1:123456789:web:abcdef..."
+};
+                </div>
+            </div>
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">4</span>설정값 적용</h3>
+            <p>복사한 설정값을 프로젝트에 적용합니다.</p>
+            
+            <div class="config-form">
+                <h4>설정값 입력</h4>
+                <div class="form-group">
+                    <label for="apiKey">API Key</label>
+                    <input type="text" id="apiKey" placeholder="AIzaSyB...">
+                </div>
+                <div class="form-group">
+                    <label for="authDomain">Auth Domain</label>
+                    <input type="text" id="authDomain" placeholder="your-project.firebaseapp.com">
+                </div>
+                <div class="form-group">
+                    <label for="projectId">Project ID</label>
+                    <input type="text" id="projectId" placeholder="your-project-id">
+                </div>
+                <div class="form-group">
+                    <label for="storageBucket">Storage Bucket</label>
+                    <input type="text" id="storageBucket" placeholder="your-project.appspot.com">
+                </div>
+                <div class="form-group">
+                    <label for="messagingSenderId">Messaging Sender ID</label>
+                    <input type="text" id="messagingSenderId" placeholder="123456789">
+                </div>
+                <div class="form-group">
+                    <label for="appId">App ID</label>
+                    <input type="text" id="appId" placeholder="1:123456789:web:abcdef...">
+                </div>
+                <button class="button" onclick="generateConfig()">설정 코드 생성</button>
+            </div>
+
+            <div id="generatedConfig" style="display: none;">
+                <h4>생성된 설정 코드</h4>
+                <div class="code-block" id="configCode"></div>
+                <div class="success">
+                    <strong>다음 단계:</strong> 생성된 코드를 복사하여 <code>firebase-config.js</code> 파일의 <code>firebaseConfig</code> 객체를 교체하세요.
+                </div>
+            </div>
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">5</span>보안 규칙 설정 (선택사항)</h3>
+            <p>운영 환경에서는 적절한 보안 규칙을 설정해야 합니다.</p>
+            
+            <div class="code-block">
+// Firestore 보안 규칙 예시
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 예약 데이터는 모든 사용자가 읽기/쓰기 가능 (개발용)
+    match /reservations/{document} {
+      allow read, write: if true;
+    }
+    
+    // 운영용 보안 규칙 (관리자만 접근)
+    // match /reservations/{document} {
+    //   allow read, write: if request.auth != null && 
+    //     request.auth.token.admin == true;
+    // }
+  }
+}
+            </div>
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">6</span>테스트 및 확인</h3>
+            <p>설정이 올바르게 적용되었는지 확인합니다.</p>
+            <ol>
+                <li><a href="database-test.html" class="button">데이터베이스 테스트</a> 페이지로 이동</li>
+                <li>"Firebase 연결 테스트" 버튼 클릭</li>
+                <li>✅ Firebase 실제 설정이 감지되었습니다 메시지 확인</li>
+                <li>"데이터 작업 테스트" 버튼으로 실제 저장/조회 테스트</li>
+            </ol>
+        </div>
+
+        <div class="warning">
+            <strong>⚠️ 주의사항:</strong>
+            <ul>
+                <li>API 키는 공개되어도 되지만, 보안 규칙으로 접근을 제한하세요</li>
+                <li>운영 환경에서는 적절한 보안 규칙을 설정하세요</li>
+                <li>Firebase 사용량에 따라 요금이 부과될 수 있습니다</li>
+            </ul>
+        </div>
+
+        <div class="success">
+            <strong>✅ 완료 후:</strong>
+            <ul>
+                <li>예약 데이터가 Firebase에 저장됩니다</li>
+                <li>관리자 페이지에서 실시간으로 데이터를 확인할 수 있습니다</li>
+                <li>로컬 저장소는 백업으로 계속 작동합니다</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 2rem;">
+            <a href="index.html" class="button secondary">홈으로 돌아가기</a>
+            <a href="database-test.html" class="button">테스트 페이지로 이동</a>
+        </div>
+    </div>
+
+    <script>
+        function generateConfig() {
+            const apiKey = document.getElementById('apiKey').value;
+            const authDomain = document.getElementById('authDomain').value;
+            const projectId = document.getElementById('projectId').value;
+            const storageBucket = document.getElementById('storageBucket').value;
+            const messagingSenderId = document.getElementById('messagingSenderId').value;
+            const appId = document.getElementById('appId').value;
+
+            if (!apiKey || !authDomain || !projectId) {
+                alert('필수 항목(API Key, Auth Domain, Project ID)을 입력해주세요.');
+                return;
+            }
+
+            const configCode = `const firebaseConfig = {
+    apiKey: "${apiKey}",
+    authDomain: "${authDomain}",
+    projectId: "${projectId}",
+    storageBucket: "${storageBucket || projectId + '.appspot.com'}",
+    messagingSenderId: "${messagingSenderId || '123456789'}",
+    appId: "${appId || '1:123456789:web:abcdef1234567890abcdef'}"
+};`;
+
+            document.getElementById('configCode').textContent = configCode;
+            document.getElementById('generatedConfig').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>데이터베이스 테스트 - 프놈펜 한식당</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .header h1 {
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .test-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .test-section h3 {
+            color: #667eea;
+            margin-bottom: 1rem;
+        }
+
+        .status {
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            margin: 0.5rem 0;
+            font-weight: 500;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .test-button {
+            background: #667eea;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .test-button:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+
+        .test-button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .log {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .data-display {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 데이터베이스 테스트</h1>
+            <p>Firebase와 로컬 저장소 상태를 확인합니다</p>
+        </div>
+
+        <div class="test-section">
+            <h3>1. Firebase 연결 상태</h3>
+            <div id="firebaseStatus"></div>
+            <button class="test-button" onclick="testFirebaseConnection()">Firebase 연결 테스트</button>
+        </div>
+
+        <div class="test-section">
+            <h3>2. 로컬 저장소 테스트</h3>
+            <div id="localStorageStatus"></div>
+            <button class="test-button" onclick="testLocalStorage()">로컬 저장소 테스트</button>
+        </div>
+
+        <div class="test-section">
+            <h3>3. 데이터 저장/조회 테스트</h3>
+            <div id="dataTestStatus"></div>
+            <button class="test-button" onclick="testDataOperations()">데이터 작업 테스트</button>
+            <button class="test-button" onclick="clearTestData()">테스트 데이터 삭제</button>
+        </div>
+
+        <div class="test-section">
+            <h3>4. 현재 저장된 예약 데이터</h3>
+            <div id="currentData"></div>
+            <button class="test-button" onclick="loadCurrentData()">데이터 새로고침</button>
+        </div>
+
+        <div class="test-section">
+            <h3>5. 시스템 로그</h3>
+            <div class="log" id="systemLog"></div>
+            <button class="test-button" onclick="clearLog()">로그 지우기</button>
+        </div>
+    </div>
+
+    <!-- Firebase SDK CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+        let logContainer = document.getElementById('systemLog');
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logMessage = `[${timestamp}] ${message}\n`;
+            logContainer.textContent += logMessage;
+            logContainer.scrollTop = logContainer.scrollHeight;
+            console.log(message);
+        }
+
+        function showStatus(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        function testFirebaseConnection() {
+            log('Firebase 연결 테스트 시작...');
+            
+            try {
+                if (typeof firebase === 'undefined') {
+                    showStatus('firebaseStatus', '❌ Firebase SDK가 로드되지 않았습니다', 'error');
+                    log('Firebase SDK 로드 실패', 'error');
+                    return;
+                }
+
+                if (typeof window.firebaseApp === 'undefined') {
+                    showStatus('firebaseStatus', '❌ Firebase 앱이 초기화되지 않았습니다', 'error');
+                    log('Firebase 앱 초기화 실패', 'error');
+                    return;
+                }
+
+                // Firebase 설정 확인
+                const config = {
+                    apiKey: "AIzaSyBxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                    authDomain: "your-project-name.firebaseapp.com",
+                    projectId: "your-project-name"
+                };
+
+                // 데모 설정인지 확인
+                if (config.apiKey === "AIzaSyBxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" || 
+                    config.projectId === "your-project-name") {
+                    showStatus('firebaseStatus', '⚠️ Firebase 데모 설정이 감지되었습니다. 실제 프로젝트 설정이 필요합니다.', 'warning');
+                    log('Firebase 데모 설정 사용 중', 'warning');
+                    log('📝 Firebase 콘솔(https://console.firebase.google.com)에서 프로젝트를 생성하고 설정값을 업데이트하세요.', 'info');
+                    log(`현재 API Key: ${config.apiKey}`, 'info');
+                    log(`현재 Project ID: ${config.projectId}`, 'info');
+                } else {
+                    showStatus('firebaseStatus', '✅ Firebase 실제 설정이 감지되었습니다', 'success');
+                    log('Firebase 실제 설정 사용 중', 'success');
+                    log(`API Key: ${config.apiKey.substring(0, 10)}...`, 'info');
+                    log(`Project ID: ${config.projectId}`, 'info');
+                }
+
+            } catch (error) {
+                showStatus('firebaseStatus', `❌ Firebase 연결 오류: ${error.message}`, 'error');
+                log(`Firebase 연결 오류: ${error.message}`, 'error');
+            }
+        }
+
+        function testLocalStorage() {
+            log('로컬 저장소 테스트 시작...');
+            
+            try {
+                // 로컬 저장소 사용 가능 여부 확인
+                if (typeof Storage === 'undefined') {
+                    showStatus('localStorageStatus', '❌ 로컬 저장소를 지원하지 않는 브라우저입니다', 'error');
+                    log('로컬 저장소 미지원', 'error');
+                    return;
+                }
+
+                // 테스트 데이터 저장
+                const testData = {
+                    id: 'test_' + Date.now(),
+                    name: '테스트 사용자',
+                    phone: '010-1234-5678',
+                    date: '2024-01-01',
+                    time: '12:00',
+                    guests: '2',
+                    status: 'test',
+                    createdAt: new Date().toISOString()
+                };
+
+                localStorage.setItem('test_reservation', JSON.stringify(testData));
+                
+                // 테스트 데이터 읽기
+                const retrievedData = JSON.parse(localStorage.getItem('test_reservation'));
+                
+                if (retrievedData && retrievedData.id === testData.id) {
+                    showStatus('localStorageStatus', '✅ 로컬 저장소가 정상적으로 작동합니다', 'success');
+                    log('로컬 저장소 테스트 성공', 'success');
+                } else {
+                    showStatus('localStorageStatus', '❌ 로컬 저장소 데이터 읽기/쓰기 오류', 'error');
+                    log('로컬 저장소 데이터 불일치', 'error');
+                }
+
+                // 테스트 데이터 삭제
+                localStorage.removeItem('test_reservation');
+
+            } catch (error) {
+                showStatus('localStorageStatus', `❌ 로컬 저장소 오류: ${error.message}`, 'error');
+                log(`로컬 저장소 오류: ${error.message}`, 'error');
+            }
+        }
+
+        async function testDataOperations() {
+            log('데이터 작업 테스트 시작...');
+            
+            try {
+                const testReservation = {
+                    name: '테스트 예약자',
+                    phone: '010-9999-8888',
+                    email: 'test@example.com',
+                    date: '2024-12-31',
+                    time: '18:00',
+                    guests: '4',
+                    table: 'window',
+                    special: '테스트 예약입니다'
+                };
+
+                // 데이터 저장 테스트
+                log('예약 데이터 저장 시도...');
+                const saveResult = await window.firebaseApp.saveReservation(testReservation);
+                
+                if (saveResult && saveResult.success) {
+                    showStatus('dataTestStatus', '✅ 데이터 저장 성공', 'success');
+                    log(`저장 성공: ID ${saveResult.id}`, 'success');
+                    
+                    // 데이터 조회 테스트
+                    log('저장된 데이터 조회 시도...');
+                    const loadResult = await window.firebaseApp.getAllReservations();
+                    
+                    if (loadResult && loadResult.success) {
+                        const testData = loadResult.data.find(item => item.phone === testReservation.phone);
+                        if (testData) {
+                            showStatus('dataTestStatus', '✅ 데이터 저장 및 조회 성공', 'success');
+                            log('데이터 조회 성공', 'success');
+                        } else {
+                            showStatus('dataTestStatus', '⚠️ 데이터 저장은 성공했지만 조회에서 찾을 수 없습니다', 'warning');
+                            log('저장된 데이터를 조회에서 찾을 수 없음', 'warning');
+                        }
+                    } else {
+                        showStatus('dataTestStatus', '❌ 데이터 조회 실패', 'error');
+                        log('데이터 조회 실패', 'error');
+                    }
+                } else {
+                    showStatus('dataTestStatus', `❌ 데이터 저장 실패: ${saveResult?.error || '알 수 없는 오류'}`, 'error');
+                    log(`데이터 저장 실패: ${saveResult?.error || '알 수 없는 오류'}`, 'error');
+                }
+
+            } catch (error) {
+                showStatus('dataTestStatus', `❌ 데이터 작업 오류: ${error.message}`, 'error');
+                log(`데이터 작업 오류: ${error.message}`, 'error');
+            }
+        }
+
+        async function loadCurrentData() {
+            log('현재 저장된 데이터 로드 중...');
+            
+            try {
+                const result = await window.firebaseApp.getAllReservations();
+                
+                if (result && result.success) {
+                    const dataContainer = document.getElementById('currentData');
+                    
+                    if (result.data.length === 0) {
+                        dataContainer.innerHTML = '<div class="status info">저장된 예약 데이터가 없습니다</div>';
+                        log('저장된 데이터 없음', 'info');
+                    } else {
+                        dataContainer.innerHTML = `
+                            <div class="status success">총 ${result.data.length}개의 예약 데이터를 찾았습니다</div>
+                            <div class="data-display">
+                                <pre>${JSON.stringify(result.data, null, 2)}</pre>
+                            </div>
+                        `;
+                        log(`${result.data.length}개의 예약 데이터 로드 완료`, 'success');
+                    }
+                } else {
+                    showStatus('currentData', `❌ 데이터 로드 실패: ${result?.error || '알 수 없는 오류'}`, 'error');
+                    log(`데이터 로드 실패: ${result?.error || '알 수 없는 오류'}`, 'error');
+                }
+
+            } catch (error) {
+                showStatus('currentData', `❌ 데이터 로드 오류: ${error.message}`, 'error');
+                log(`데이터 로드 오류: ${error.message}`, 'error');
+            }
+        }
+
+        function clearTestData() {
+            log('테스트 데이터 삭제 중...');
+            
+            try {
+                // 로컬 저장소에서 테스트 데이터 삭제
+                const reservations = JSON.parse(localStorage.getItem('reservations') || '[]');
+                const filteredReservations = reservations.filter(item => 
+                    !item.phone.includes('9999') && 
+                    !item.name.includes('테스트')
+                );
+                localStorage.setItem('reservations', JSON.stringify(filteredReservations));
+                
+                showStatus('dataTestStatus', '✅ 테스트 데이터가 삭제되었습니다', 'success');
+                log('테스트 데이터 삭제 완료', 'success');
+                
+                // 현재 데이터 새로고침
+                loadCurrentData();
+
+            } catch (error) {
+                showStatus('dataTestStatus', `❌ 테스트 데이터 삭제 오류: ${error.message}`, 'error');
+                log(`테스트 데이터 삭제 오류: ${error.message}`, 'error');
+            }
+        }
+
+        function clearLog() {
+            logContainer.textContent = '';
+        }
+
+        // 페이지 로드 시 자동 테스트 실행
+        document.addEventListener('DOMContentLoaded', function() {
+            log('데이터베이스 테스트 페이지 로드 완료');
+            testFirebaseConnection();
+            testLocalStorage();
+            loadCurrentData();
+        });
+    </script>
+</body>
+</html>

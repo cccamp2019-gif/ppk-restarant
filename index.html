@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>프놈펜 한식당 - 예약 시스템</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header */
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+        }
+
+        .logo {
+            font-size: 2rem;
+            font-weight: bold;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo-image {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+        }
+
+        .logo-text {
+            display: flex;
+            align-items: center;
+            gap: 0.2rem;
+        }
+
+        .phnom-penh {
+            color: #2196F3;
+        }
+
+        .han-sik-dang {
+            color: #f44336;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            cursor: pointer;
+            padding: 0.5rem;
+        }
+
+        .hamburger span {
+            width: 25px;
+            height: 3px;
+            background: #333;
+            margin: 3px 0;
+            transition: 0.3s;
+            border-radius: 2px;
+        }
+
+        .hamburger.active span:nth-child(1) {
+            transform: rotate(-45deg) translate(-5px, 6px);
+        }
+
+        .hamburger.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .hamburger.active span:nth-child(3) {
+            transform: rotate(45deg) translate(-5px, -6px);
+        }
+
+        .mobile-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            z-index: 999;
+            padding: 1rem 0;
+        }
+
+        .mobile-menu.active {
+            display: block;
+        }
+
+        .mobile-menu ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .mobile-menu li {
+            margin: 0;
+        }
+
+        .mobile-menu a {
+            display: block;
+            padding: 1rem 2rem;
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .mobile-menu a:hover {
+            background: #f8f9fa;
+            color: #667eea;
+        }
+
+        .mobile-menu .admin-btn {
+            background: #28a745;
+            color: white;
+            margin: 1rem auto;
+            border-radius: 15px;
+            text-align: center;
+            transition: all 0.3s ease;
+            width: 30%;
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+
+        .mobile-menu .admin-btn:hover {
+            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: #667eea;
+        }
+
+        .admin-btn {
+            background: #28a745;
+            color: white;
+            padding: 0.5rem 1rem;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .admin-btn:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        /* Main Content */
+        main {
+            margin-top: 80px;
+            padding: 4rem 0;
+        }
+
+        .hero {
+            text-align: center;
+            color: white;
+            padding: 4rem 0;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .hero p {
+            font-size: 1.3rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 1rem 2.5rem;
+            text-decoration: none;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4);
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(255, 107, 107, 0.6);
+        }
+
+        /* Features Section */
+        .features {
+            background: white;
+            padding: 4rem 0;
+            margin: 2rem 0;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .features h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            color: #333;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .feature-card {
+            text-align: center;
+            padding: 2rem;
+            border-radius: 15px;
+            background: #f8f9fa;
+            transition: transform 0.3s ease;
+            cursor: pointer;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #667eea;
+        }
+
+        /* Reservation Form */
+        .reservation-section {
+            background: white;
+            padding: 4rem 0;
+            margin: 2rem 0;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .reservation-section h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            color: #333;
+        }
+
+        .reservation-form {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: #f8f9fa;
+            border-radius: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .submit-btn {
+            width: 100%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Footer */
+        footer {
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            text-align: center;
+            padding: 2rem 0;
+            margin-top: 4rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .hamburger {
+                display: flex;
+            }
+
+            .mobile-menu {
+                text-align: center;
+            }
+
+            .mobile-menu a {
+                text-align: center;
+            }
+
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero p {
+                font-size: 1.1rem;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* 모바일 추가 반응형 */
+        @media (max-width: 480px) {
+            .mobile-menu .admin-btn {
+                width: 40%;
+                font-size: 0.8rem;
+                padding: 0.4rem 0.8rem;
+            }
+
+            .mobile-menu a {
+                padding: 0.8rem 1rem;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <a href="#" class="logo">
+                <img src="images/청사초롱로고.png" alt="청사초롱 로고" class="logo-image">
+                <div class="logo-text">
+                    <span class="phnom-penh">프놈펜</span>
+                    <span class="han-sik-dang">한식당</span>
+                </div>
+            </a>
+            <ul class="nav-links">
+                <li><a href="#home">홈</a></li>
+                <li><a href="menu.html">메뉴</a></li>
+                <li><a href="#about">소개</a></li>
+                <li><a href="#contact">연락처</a></li>
+                <li><a href="login.html" class="admin-btn">관리자</a></li>
+            </ul>
+            <div class="hamburger" onclick="toggleMobileMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </nav>
+        <div class="mobile-menu" id="mobileMenu">
+            <ul>
+                <li><a href="#home" onclick="closeMobileMenu()">홈</a></li>
+                <li><a href="menu.html" onclick="closeMobileMenu()">메뉴</a></li>
+                <li><a href="#about" onclick="closeMobileMenu()">소개</a></li>
+                <li><a href="#contact" onclick="closeMobileMenu()">연락처</a></li>
+                <li><a href="login.html" class="admin-btn" onclick="closeMobileMenu()">관리자</a></li>
+            </ul>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero" id="home">
+            <div class="container">
+                <h1>프놈펜 한식당에 오신 것을 환영합니다</h1>
+                <p>신선한 재료와 정성스러운 요리로 특별한 식사 경험을 제공합니다</p>
+                <button class="cta-button" onclick="scrollToReservation()">지금 예약하기</button>
+            </div>
+        </section>
+
+        <section class="features">
+            <div class="container">
+                <h2>우리의 특별함</h2>
+                <div class="features-grid">
+                    <div class="feature-card" onclick="window.location.href='fresh-ingredients.html'">
+                        <div class="feature-icon">🍴</div>
+                        <h3>신선한 재료</h3>
+                        <p>매일 아침 직접 선별한 신선한 재료로 건강하고 맛있는 요리를 제공합니다.</p>
+                    </div>
+                    <div class="feature-card" onclick="window.location.href='professional-chef.html'">
+                        <div class="feature-icon">👨‍🍳</div>
+                        <h3>전문 셰프</h3>
+                        <p>경험이 풍부한 전문 셰프가 정성스럽게 준비한 특별한 요리를 맛보세요.</p>
+                    </div>
+                    <div class="feature-card" onclick="window.location.href='cozy-atmosphere.html'">
+                        <div class="feature-icon">🏠</div>
+                        <h3>아늑한 분위기</h3>
+                        <p>가족과 친구들과 함께 즐거운 시간을 보낼 수 있는 아늑한 공간입니다.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="reservation-section" id="reservation">
+            <div class="container">
+                <h2>예약 신청</h2>
+                <p style="text-align: center; font-size: 1.2rem; margin-bottom: 2rem; color: #666;">
+                    특별한 식사 경험을 위해 미리 예약해주세요
+                </p>
+                <div style="text-align: center;">
+                    <a href="reservation.html" class="cta-button">예약 신청하기</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 프놈펜 한식당. All rights reserved.</p>
+            <p>📞 02-1234-5678 | 📍 서울시 강남구 테헤란로 123</p>
+        </div>
+    </footer>
+
+    <script>
+        function scrollToReservation() {
+            document.getElementById('reservation').scrollIntoView({
+                behavior: 'smooth'
+            });
+        }
+
+        // 예약 완료 메시지 표시
+        function showReservationSuccess() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('reservation') === 'success') {
+                // 성공 메시지 생성
+                const successMessage = document.createElement('div');
+                successMessage.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background: linear-gradient(45deg, #28a745, #20c997);
+                    color: white;
+                    padding: 1rem 2rem;
+                    border-radius: 10px;
+                    box-shadow: 0 8px 25px rgba(40, 167, 69, 0.4);
+                    z-index: 10000;
+                    font-weight: 500;
+                    text-align: center;
+                    animation: slideDown 0.5s ease-out;
+                `;
+                successMessage.innerHTML = `
+                    <div style="font-size: 1.2rem; margin-bottom: 0.5rem;">🎉 예약이 완료되었습니다!</div>
+                    <div style="font-size: 0.9rem; opacity: 0.9;">곧 연락드리겠습니다</div>
+                `;
+                
+                // 애니메이션 CSS 추가
+                const style = document.createElement('style');
+                style.textContent = `
+                    @keyframes slideDown {
+                        from {
+                            transform: translateX(-50%) translateY(-100%);
+                            opacity: 0;
+                        }
+                        to {
+                            transform: translateX(-50%) translateY(0);
+                            opacity: 1;
+                        }
+                    }
+                `;
+                document.head.appendChild(style);
+                
+                // 메시지 추가
+                document.body.appendChild(successMessage);
+                
+                // 5초 후 메시지 제거
+                setTimeout(() => {
+                    successMessage.style.animation = 'slideUp 0.5s ease-out forwards';
+                    setTimeout(() => {
+                        if (successMessage.parentNode) {
+                            successMessage.parentNode.removeChild(successMessage);
+                        }
+                    }, 500);
+                }, 5000);
+                
+                // slideUp 애니메이션 추가
+                const slideUpStyle = document.createElement('style');
+                slideUpStyle.textContent = `
+                    @keyframes slideUp {
+                        from {
+                            transform: translateX(-50%) translateY(0);
+                            opacity: 1;
+                        }
+                        to {
+                            transform: translateX(-50%) translateY(-100%);
+                            opacity: 0;
+                        }
+                    }
+                `;
+                document.head.appendChild(slideUpStyle);
+                
+                // URL에서 파라미터 제거 (새로고침 시 메시지가 다시 나타나지 않도록)
+                const newUrl = window.location.pathname;
+                window.history.replaceState({}, document.title, newUrl);
+            }
+        }
+        // 모바일 메뉴 토글
+        function toggleMobileMenu() {
+            const mobileMenu = document.getElementById('mobileMenu');
+            const hamburger = document.querySelector('.hamburger');
+            
+            mobileMenu.classList.toggle('active');
+            hamburger.classList.toggle('active');
+        }
+
+        // 모바일 메뉴 닫기
+        function closeMobileMenu() {
+            const mobileMenu = document.getElementById('mobileMenu');
+            const hamburger = document.querySelector('.hamburger');
+            
+            mobileMenu.classList.remove('active');
+            hamburger.classList.remove('active');
+        }
+
+        // 페이지 로드 시 예약 완료 메시지 확인
+        document.addEventListener('DOMContentLoaded', function() {
+            showReservationSuccess();
+            
+            // 모바일 메뉴 외부 클릭 시 닫기
+            document.addEventListener('click', function(event) {
+                const mobileMenu = document.getElementById('mobileMenu');
+                const hamburger = document.querySelector('.hamburger');
+                
+                if (!mobileMenu.contains(event.target) && !hamburger.contains(event.target)) {
+                    mobileMenu.classList.remove('active');
+                    hamburger.classList.remove('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
